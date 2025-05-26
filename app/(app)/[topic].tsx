@@ -6,6 +6,7 @@ import { Text, View } from "@/components/Themed";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useSQLiteContext } from "expo-sqlite";
+import Footer from "@/components/footer";
 
 interface LearningMaterial {
   id: number;
@@ -136,13 +137,7 @@ export default function TopicScreen() {
           <Text style={styles.buttonText}>Lesson</Text>
         </TouchableOpacity>
       </View>
-      <View
-        style={{
-          height: 80,
-          backgroundColor: "#FF0000",
-          width: "100%",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

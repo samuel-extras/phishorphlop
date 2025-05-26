@@ -4,6 +4,7 @@ import { Platform, StyleSheet, TouchableOpacity } from "react-native";
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import { router } from "expo-router";
+import Footer from "@/components/footer";
 
 export default function LearningScreen() {
   return (
@@ -106,13 +107,7 @@ export default function LearningScreen() {
           <Text style={styles.buttonText}>Quid Pro Quo!</Text>
         </TouchableOpacity>
       </View>
-      <View
-        style={{
-          height: 80,
-          backgroundColor: "#FF0000",
-          width: "100%",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

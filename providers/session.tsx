@@ -3,6 +3,8 @@ import { createContext, use, type PropsWithChildren } from "react";
 import * as Crypto from "expo-crypto";
 import { type SQLiteDatabase } from "expo-sqlite";
 
+// Auth context === SESSSION PROVIDER ====
+
 const AuthContext = createContext<{
   signIn: (
     db: SQLiteDatabase,
@@ -77,7 +79,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         throw new Error("Incorrect password");
       }
 
-      // Store user ID as session
+      // Store user ID, username, and email as session
       setSession(`${user.id}, ${user.username}, ${user.email}`);
       console.log("Signed in user:", { id: user.id, username: user.username });
     } catch (error: any) {

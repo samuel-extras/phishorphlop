@@ -25,6 +25,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSession } from "@/providers/session";
+import Footer from "@/components/footer";
 
 const { width } = Dimensions.get("window");
 
@@ -580,13 +581,7 @@ export default function QuizScreen() {
             <Text style={styles.buttonText}>Start! </Text>
           </TouchableOpacity>
         </View>
-        <View
-          style={{
-            height: 80,
-            backgroundColor: "#FF0000",
-            width: "100%",
-          }}
-        />
+        <Footer />
       </View>
     );
   }

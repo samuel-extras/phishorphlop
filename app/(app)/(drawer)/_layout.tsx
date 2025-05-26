@@ -88,10 +88,21 @@ export default function Layout() {
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.replace("/")}>
                 <Text style={{ color: "#000", fontWeight: "900" }}>
-                  Welcome {session ? session.split(",")[1] : ""}
+                  Hi, {session ? session.split(",")[1] : ""}
                 </Text>
               </TouchableOpacity>
             ),
+            // headerRight: () => (
+            //   <TouchableOpacity
+            //     onPress={() => {
+            //       // Open the drawer view.
+            //       // navigation.dispatch(DrawerActions.openDrawer());
+            //       navigation.openDrawer();
+            //     }}
+            //   >
+            //     <FontAwesome6 name="bars" size={24} color="#000" />,
+            //   </TouchableOpacity>
+            // ),
           }}
         />
         <Drawer.Screen

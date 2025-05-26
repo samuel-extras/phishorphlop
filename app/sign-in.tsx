@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as Crypto from "expo-crypto";
 import { useSQLiteContext } from "expo-sqlite";
+import Footer from "@/components/footer";
 
 interface LoginForm {
   emailOrUsername: string;
@@ -69,18 +70,12 @@ export default function SignIn() {
 
       <View
         style={{
-          flex: 6 / 8,
+          flex: 1,
           paddingHorizontal: 24,
           justifyContent: "flex-end",
         }}
       >
         <Text
-          // onPress={() => {
-          //   signIn();
-          //   // Navigate after signing in. You may want to tweak this to ensure sign-in is
-          //   // successful before navigating.
-          //   router.replace("/");
-          // }}
           style={{
             fontWeight: "900",
             fontStyle: "italic",
@@ -142,12 +137,7 @@ export default function SignIn() {
           </View>
         </View>
       </View>
-      <View
-        style={{
-          flex: 1 / 8,
-          backgroundColor: "#FF0000",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

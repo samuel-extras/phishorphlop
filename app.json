@@ -14,14 +14,16 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.samuelextras.phishorphlop"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.samuelextras.phishorphlop"
     },
     "web": {
       "bundler": "metro",
@@ -37,8 +39,18 @@
           "faceIDPermission": "Allow phishorphlop to access your Face ID biometric data."
         }
       ],
-
-      "expo-sqlite"
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow phishorphlop to access your microphone."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

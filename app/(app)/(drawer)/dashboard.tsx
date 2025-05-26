@@ -5,14 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-
+import { useFocusEffect } from "expo-router"; // Import useFocusEffect
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
-import { router } from "expo-router";
 import { useSession } from "@/providers/session";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react"; // Import useCallback
 import { useSQLiteContext } from "expo-sqlite";
+import Footer from "@/components/footer";
 
 interface Score {
   attempt_id: string;
@@ -35,24 +34,29 @@ export default function DashboardScreen() {
   const [simulationScores, setSimulationScores] = useState<Score[]>([]);
   const { session } = useSession();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const userId = 1; // Replace with AuthContext userId
-        const user = await db.getFirstAsync<User>(
-          "SELECT * FROM users WHERE id = ?",
-          [userId]
-        );
-        if (user) {
-          setQuizScores(JSON.parse(user.quizScores || "[]"));
-          setSimulationScores(JSON.parse(user.simulationScores || "[]"));
-        }
-      } catch (error: any) {
-        console.error("Error fetching dashboard data:", error);
+  // Function to fetch data
+  const fetchData = useCallback(async () => {
+    try {
+      const userId = 1; // Replace with AuthContext userId
+      const user = await db.getFirstAsync<User>(
+        "SELECT * FROM users WHERE id = ?",
+        [userId]
+      );
+      if (user) {
+        setQuizScores(JSON.parse(user.quizScores || "[]"));
+        setSimulationScores(JSON.parse(user.simulationScores || "[]"));
       }
-    };
-    fetchData();
+    } catch (error: any) {
+      console.error("Error fetching dashboard data:", error);
+    }
   }, [db]);
+
+  // Use useFocusEffect to refetch data when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const getStats = () => {
     const totalQuizAttempts = quizScores.length;
@@ -128,13 +132,10 @@ export default function DashboardScreen() {
     quizAvgScore,
     totalSimulationAttempts,
     simulationAvgScore,
-    quizTypeStats,
-    attackTypeStats,
   } = getStats();
 
   return (
     <View style={styles.container}>
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
       <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
       <ScrollView style={[styles.container, { padding: 20 }]}>
         <Text style={styles.title}>Progress Dashboard</Text>
@@ -165,13 +166,7 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      <View
-        style={{
-          height: 80,
-          backgroundColor: "#FF0000",
-          width: "100%",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }
@@ -182,7 +177,6 @@ const styles = StyleSheet.create({
     height: "auto",
     paddingVertical: 18,
     paddingHorizontal: 60,
-
     borderRadius: 4,
     marginTop: 10,
     alignItems: "center",

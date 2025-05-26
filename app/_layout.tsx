@@ -15,18 +15,14 @@ import {
   useSQLiteContext,
   type SQLiteDatabase,
 } from "expo-sqlite";
-
+import * as SecureStore from "expo-secure-store";
+import * as Crypto from "expo-crypto";
 import { useColorScheme } from "@/components/useColorScheme";
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from "expo-router";
-
-// export const unstable_settings = {
-//   // Ensure that reloading on `/modal` keeps a back button present.
-//   initialRouteName: "(tabs)",
-// };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -69,12 +65,29 @@ function RootLayoutNav() {
   );
 }
 
+// Generate a random key for database encryption
+const generateKey = async () => {
+  const bytes = await Crypto.getRandomBytesAsync(32);
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+// Database initialization
 const createDbIfNeeded = async (db: SQLiteDatabase) => {
   console.log("Initializing database...");
   try {
-    // // Drop the existing users table (if it exists) to ensure correct schema
-    // await db.execAsync("DROP TABLE IF EXISTS users");
-    // console.log("Dropped existing users table (if any)");
+    let password = await SecureStore.getItemAsync("dbPassword");
+    if (!password) {
+      password = await generateKey();
+      await SecureStore.setItemAsync("dbPassword", password);
+    }
+
+    // This statement must be run first!!!
+    // Otherwise there will be an error saying "file is not a database".
+    await db.execAsync(`PRAGMA key = "${password}"`);
+
+    await db.runAsync("pragma journal_mode = WAL");
 
     // Create the users table if it doesn't exist
     await db.execAsync(`
@@ -259,6 +272,18 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
           category: "Question",
         },
         {
+          question: "What is Scareware?",
+          answer:
+            "Scareware is fake software or pop-ups that try to scare you with warnings to make you click or pay for fake security.",
+          category: "Question",
+        },
+        {
+          question: "WWhat is Baiting?",
+          answer:
+            "Baiting is when scammers offer something exciting (like a prize or free download) to trick you into giving personal information or downloading malware.",
+          category: "Question",
+        },
+        {
           question: "What is malware?",
           answer:
             "Malware is harmful software designed to damage or exploit devices, like viruses or spyware.",
@@ -306,60 +331,69 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
             "A VPN (Virtual Private Network) encrypts your internet connection for privacy and security.",
           category: "Question",
         },
+        {
+          question: "WWhat is Tailgating?",
+          answer:
+            "Tailgating is when someone sneaks behind you to enter a secure area without permission, pretending they belong there.",
+          category: "Question",
+        },
 
-        // Definitions (15)
+        // Best Practices (15)
         {
-          question: "Phishing",
+          question: "How can you spot a phishing email?",
           answer:
-            "A scam using fake messages to trick you into sharing personal information like passwords.",
-          category: "Definition",
+            "Look for bad spelling, strange email addresses, urgent or scary messages, and links that don’t match the real website.",
+          category: "Best Practices",
         },
         {
-          question: "Spear Phishing",
+          question: "How can you create a strong password?",
           answer:
-            "A targeted phishing attack using personal details to seem more convincing.",
-          category: "Definition",
+            "Use at least 12 characters with upper- and lowercase letters, numbers, and special symbols — and don’t reuse passwords!",
+          category: "Best Practices",
         },
         {
-          question: "Vishing",
+          question: "What should you do if you get a strange text with a link?",
           answer:
-            "Voice phishing, where scammers call pretending to be trustworthy to steal information.",
-          category: "Definition",
+            "Don’t click it. Delete the message or show a trusted adult — it could be a smishing attack.",
+          category: "Best Practices",
         },
         {
-          question: "Smishing",
+          question: "What do you do if someone asks for your password?",
           answer:
-            "Phishing via text messages, tricking you into clicking links or sharing info.",
-          category: "Definition",
+            "Never share your password — not even with friends. Real companies or staff will never ask for it.",
+          category: "Best Practices",
         },
         {
-          question: "Pretexting",
+          question: "How do you stay safe on public Wi-Fi?",
           answer:
-            "Creating a fake story to gain trust and trick someone into sharing information.",
-          category: "Definition",
+            "Avoid logging into important accounts and never enter passwords or card info when on public Wi-Fi.",
+          category: "Best Practices",
         },
         {
-          question: "Baiting",
+          question: "How do you know if a message is fake?",
           answer:
-            "Offering something tempting to trick you into downloading malware or sharing info.",
-          category: "Definition",
+            "If it feels rushed, weird, or too good to be true — double-check with someone you trust before acting.",
+          category: "Best Practices",
         },
         {
-          question: "Quid Pro Quo",
+          question: "How can you protect your accounts?",
           answer:
-            "Offering a reward in exchange for personal information or actions.",
-          category: "Definition",
+            "Use strong passwords and turn on two-factor authentication (2FA) to add an extra layer of security.",
+          category: "Best Practices",
         },
         {
-          question: "Malware",
-          answer: "Harmful software designed to damage or exploit devices.",
-          category: "Definition",
+          question:
+            "What should you do if someone calls and asks for private info?",
+          answer:
+            "Hang up. Call the real company or person directly using a trusted number.",
+          category: "Best Practices",
         },
         {
-          question: "Firewall",
+          question:
+            "What should you do if someone wants to follow you through a locked door?",
           answer:
-            "A security system that controls network traffic to protect your device.",
-          category: "Definition",
+            " Politely ask them to use their own ID or wait for staff. Don’t let strangers into secure areas.",
+          category: "Best Practices",
         },
         {
           question: "Two-Factor Authentication",
@@ -368,9 +402,9 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
           category: "Definition",
         },
         {
-          question: "Social Engineering",
+          question: "What do you do if you find a USB stick lying around?",
           answer:
-            "Tricking people into giving away information by exploiting trust or fear.",
+            "Don’t plug it in — it could contain malware. Give it to a teacher or trusted adult.",
           category: "Definition",
         },
         {
@@ -546,6 +580,24 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
           question: "Patch",
           answer:
             "A software update that fixes security vulnerabilities or bugs.",
+          category: "Term",
+        },
+        {
+          question: "What is Clickjacking?",
+          answer:
+            "Clickjacking tricks you into clicking something that looks harmless but does something you didn’t expect, like sharing private info.",
+          category: "Term",
+        },
+        {
+          question: "What is Social Engineering?",
+          answer:
+            "Social engineering is tricking people into giving away information or doing something dangerous, often by pretending to be someone they trust.",
+          category: "Term",
+        },
+        {
+          question: "What is Multi-Factor Authentication (MFA)?",
+          answer:
+            "MFA is a security method that uses two or more steps to log in, like a password plus a code sent to your phone.",
           category: "Term",
         },
       ];
@@ -806,102 +858,6 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
       console.log("Quiz questions inserted successfully");
     } else {
       console.log("Quiz questions already exist, skipping insertion");
-    }
-
-    await db.execAsync(`
-     CREATE TABLE IF NOT EXISTS simulated_attacks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      scenario TEXT,
-      attack_type TEXT,
-      correct_action TEXT,
-      incorrect_actions TEXT,
-      explanation TEXT
-    )
-    `);
-
-    console.log("Simulated attacks table created or already exists");
-
-    let attachCountResult = await db.getFirstAsync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM simulated_attacks"
-    );
-    let attachExistingCount = attachCountResult?.count || 0;
-    console.log(`Existing simulated_attacks: ${attachExistingCount}`);
-
-    if (attachExistingCount === 0) {
-      const attacks = [
-        {
-          scenario:
-            'You receive an email from "support@yourbank.com" with a link to reset your password due to a "security breach." The email urges immediate action.',
-          attack_type: "email",
-          correct_action: "Contact your bank directly to verify",
-          incorrect_actions:
-            "Click the link to reset password,Reply with your credentials,Ignore but don’t report",
-          explanation:
-            "Phishing emails often mimic banks and use urgent language. Always verify via official channels.",
-        },
-        {
-          scenario:
-            "An email claims you’ve won a $500 gift card and asks you to provide your address to claim it.",
-          attack_type: "email",
-          correct_action: "Delete the email",
-          incorrect_actions:
-            "Provide your address,Click the claim link,Forward to friends",
-          explanation:
-            "Unsolicited prize emails are phishing scams. Delete them to avoid data theft.",
-        },
-        {
-          scenario:
-            "You get a text message from an unknown number saying your package is delayed and you need to click a link to reschedule delivery.",
-          attack_type: "message",
-          correct_action: "Check with the delivery company directly",
-          incorrect_actions:
-            "Click the link,Reply with your address,Save the link for later",
-          explanation:
-            "Smishing texts exploit urgency. Verify delivery status through official websites.",
-        },
-        {
-          scenario:
-            "A text claims your account is locked and you must call a number to unlock it.",
-          attack_type: "message",
-          correct_action: "Log into your account via the official app",
-          incorrect_actions:
-            "Call the number,Reply with your PIN,Ignore but don’t check",
-          explanation:
-            "Smishing scams use fake account alerts. Use official apps or websites to check status.",
-        },
-        {
-          scenario:
-            "A caller claiming to be from your IT department asks for your login details to fix a server issue.",
-          attack_type: "call",
-          correct_action: "Hang up and report to IT",
-          incorrect_actions:
-            "Provide login details,Ask for their employee ID,Call them back later",
-          explanation:
-            "Vishing calls pretend to be IT support. Legitimate IT never asks for passwords.",
-        },
-        {
-          scenario:
-            "You receive a voicemail from “the IRS” demanding immediate payment for unpaid taxes via a callback number.",
-          attack_type: "call",
-          correct_action: "Report to the IRS website",
-          incorrect_actions:
-            "Call back to pay,Share payment details,Ignore but don’t report",
-          explanation:
-            "Vishing scams impersonate authorities like the IRS. Report suspicious calls to official channels.",
-        },
-      ];
-      for (const attack of attacks) {
-        await db.runAsync(
-          "INSERT INTO simulated_attacks (scenario, attack_type, correct_action, incorrect_actions, explanation) VALUES (?, ?, ?, ?, ?)",
-          [
-            attack.scenario,
-            attack.attack_type,
-            attack.correct_action,
-            attack.incorrect_actions,
-            attack.explanation,
-          ]
-        );
-      }
     }
 
     // Verify the tables' schemas

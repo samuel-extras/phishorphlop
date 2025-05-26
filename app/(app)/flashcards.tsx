@@ -13,6 +13,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { router } from "expo-router";
+import Footer from "@/components/footer";
 interface Flashcard {
   id: number;
   question: string;
@@ -215,13 +216,7 @@ export default function FlashcardsScreen() {
           )}
         </View>
       </View>
-      <View
-        style={{
-          height: 80,
-          backgroundColor: "#FF0000",
-          width: "100%",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

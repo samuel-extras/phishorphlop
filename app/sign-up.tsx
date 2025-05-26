@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as Crypto from "expo-crypto";
 import { useSQLiteContext } from "expo-sqlite";
+import Footer from "@/components/footer";
 interface RegisterForm {
   username: string;
   email: string;
@@ -18,63 +19,6 @@ interface RegisterForm {
   confirmPassword: string;
 }
 export default function SignUp() {
-  const { signIn } = useSession();
-  // const db = useSQLiteContext();
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-
-  // // Register a new user
-  // const registerUser = (username, email, password) => {
-  //   // First check if username or email already exists
-  //   return new Promise((resolve, reject) => {
-  //     db.withTransactionAsync(async () => {
-  //       db.getFirstAsync<{
-  //         // id: number;
-  //         username: string;
-  //         email: string;
-  //       }>(
-  //         "SELECT * FROM users WHERE username = ? OR email = ?",
-  //         [parseInt(username as string), email],
-  //         async (_, { rows }) => {
-  //           // If we found any matching users, username or email already exists
-  //           if (rows.length > 0) {
-  //             const existingUser = rows._array[0];
-  //             if (existingUser.username === username) {
-  //               reject(new Error("Username already exists"));
-  //             } else {
-  //               reject(new Error("Email already exists"));
-  //             }
-  //             return;
-  //           }
-
-  //           // If we get here, username and email are unique, proceed with registration
-  //           // Generate a salt
-  //           const salt = Math.random().toString(36).substring(2, 15);
-
-  //           // Hash the password with the salt
-  //           const passwordHash = await Crypto.digestStringAsync(
-  //             Crypto.CryptoDigestAlgorithm.SHA256,
-  //             password + salt
-  //           );
-
-  //           // Insert the new user
-  //           tx.executeSql(
-  //             "INSERT INTO users (username, email, password_hash, salt) VALUES (?, ?, ?, ?)",
-  //             [username, email, passwordHash, salt],
-  //             (_, result) => resolve(result),
-  //             (_, error) => reject(error)
-  //           );
-  //         },
-  //         (_, error) => reject(error)
-  //       );
-  //     });
-  //   });
-  // };
-
-  // const handleLogin = () => {
-  //   // Add your login logic here
-  //   console.log("Logging in with", email, password);
-  // };
   const db = useSQLiteContext();
   const [form, setForm] = useState<RegisterForm>({
     username: "",
@@ -83,28 +27,10 @@ export default function SignUp() {
     confirmPassword: "",
   });
   const [isSchemaValid, setIsSchemaValid] = useState(false);
-
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
-
-  // const generateSalt = async () => {
-  //   // Generate a random salt using expo-crypto
-  //   const saltBytes = await Crypto.getRandomBytesAsync(16);
-  //   return Buffer.from(saltBytes).toString("hex");
-  // };
-
-  // const hashPassword = async (password: string, salt: string) => {
-  //   // Combine password and salt, then hash using SHA-256
-  //   const saltedPassword = password + salt;
-  //   const hash = await Crypto.digestStringAsync(
-  //     Crypto.CryptoDigestAlgorithm.SHA256,
-  //     saltedPassword
-  //   );
-  //   return hash;
-  // };
-
   const generateSalt = async () => {
     // Generate a random salt using expo-crypto and encode as base64
     const saltBytes = await Crypto.getRandomBytesAsync(16);
@@ -183,18 +109,12 @@ export default function SignUp() {
 
       <View
         style={{
-          flex: 6 / 8,
+          flex: 1,
           paddingHorizontal: 24,
           justifyContent: "flex-end",
         }}
       >
         <Text
-          // onPress={() => {
-          //   signIn();
-          //   // Navigate after signing in. You may want to tweak this to ensure sign-in is
-          //   // successful before navigating.
-          //   router.replace("/");
-          // }}
           style={{
             fontWeight: "900",
             fontStyle: "italic",
@@ -252,6 +172,7 @@ export default function SignUp() {
                 fontSize: 18,
                 backgroundColor: "#1E1E1E",
                 fontWeight: "900",
+                color: "#fff",
               }}
               placeholder="Password"
               placeholderTextColor="#fff"
@@ -297,12 +218,7 @@ export default function SignUp() {
           </View>
         </View>
       </View>
-      <View
-        style={{
-          flex: 1 / 8,
-          backgroundColor: "#FF0000",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

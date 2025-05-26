@@ -5,6 +5,7 @@ import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import { router } from "expo-router";
 import { useSession } from "@/providers/session";
+import Footer from "@/components/footer";
 
 export default function HomeScreen() {
   return (
@@ -48,7 +49,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            router.push("/(app)/simulate-attack");
+            router.push("/(app)/simulate");
           }}
         >
           <Text style={styles.buttonText}>
@@ -68,13 +69,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <View
-        style={{
-          height: 80,
-          backgroundColor: "#FF0000",
-          width: "100%",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

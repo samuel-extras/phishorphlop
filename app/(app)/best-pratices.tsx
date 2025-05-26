@@ -19,8 +19,25 @@ import {
   withTiming,
 } from "react-native-reanimated";
 import { FontAwesome } from "@expo/vector-icons";
+import Footer from "@/components/footer";
 
 const bestPractices: string[] = [
+  "Clicking links can be a trap, check it first — don’t fall for crap!",
+  "Passwords strong, passwords tight, keep them hidden out of sight!",
+  "If it’s too good to be true, it’s probably fake — don’t follow through!",
+  "Don’t share your codes with any mate, it could become a hacker’s bait!",
+  "Pop-up prize? A brand-new phone? Close it fast, leave it alone!",
+  "Found a stick that’s on the floor? Don’t plug it in — that’s hacker lore!",
+  "A text that asks to click real quick? Take your time — it might be a trick!",
+  "If someone calls and makes you stress, say 'No thanks!' and don’t confess!",
+  "‘I’m from tech!’ they like to say — just hang up and walk away!",
+  "Free game skins or fancy loot? If it needs your pass — that’s a brute!",
+  "Two-step check makes hacking hard, like adding locks to your front yard!",
+  "Scammers rush you — don’t obey, take a breath and walk away!",
+  "If someone says ‘Give me your pin,’ remember — that’s a hacker’s grin!",
+  "Weird email from a teacher’s name? Double-check — it’s not a game!",
+  "Wi-Fi free and full of speed? Don’t log in — that's risky, indeed!",
+  "Trust your gut if something's off, don’t click links that seem a bit soft!",
   "Don’t click quick, it might be a trick!",
   "Links that look odd, don’t give them a nod!",
   "Calls asking for cash, hang up in a flash!",
@@ -71,6 +88,36 @@ const bestPractices: string[] = [
   "Strong password’s a must, or you’ll bite the dust!",
   "Don’t trust a deal, if it’s too good to feel!",
   "Report scams with speed, help stop the greed!",
+  "An email comes with a scary claim? Don’t click the link — it's not a game!",
+  "“Reset now!” the email said? Think twice before you’re misled!",
+  "Spelling weird and looks untrue? It might be phish — not meant for you!",
+  "Got a text with a sketchy link? Don’t tap it — stop and think!",
+  "“You’ve won a prize!” — that message lies! Delete it quick before it tries!",
+  "SMS from ‘mum’ seems strange today? Better call her — that’s the way!",
+  "A caller asks, “Confirm your name”? Just hang up — it’s not a game!",
+  "“I’m from the bank, your card was hacked!” Don't give info — it’s likely an act!",
+  "If a stranger calls and sounds quite slick, pause and ask, “Is this a trick?”",
+  "They say they’re staff or work at school? Check their badge — don’t be a fool!",
+  "Looks like someone you sort of know? Don’t trust too fast — take it slow!",
+  "“I’m from IT, I’ll fix it quick!” Don’t log in — it might be a trick!",
+  "They make a story, act so kind — but want your info? Never mind!",
+  "They say, “I’m stuck, please help me out”? But asking too much? You should doubt!",
+  "Sob stories shared to make you act? Scammers lie — and that’s a fact!",
+  "Found a USB — what a score? Don’t plug it in, it might be war!",
+  "That free download sounds so rad… But hiding malware? That’s just bad!",
+  "If it's too free and you’re unsure, leave it be — or you’ll need a cure!",
+  "They promise help or something free? It’s not worth it — let it be!",
+  "“Free cheats for games — just sign in here!” That’s bait to hack you, never fear!",
+  "“Trade your logins, get free stuff!” Don’t get played — enough’s enough!",
+  "Typing fast and someone stares? Cover your screen — show you care!",
+  "Eyes behind? That’s not okay — block your screen without delay!",
+  "ATM or login screen? Keep it secret, keep it clean!",
+  "Someone follows through the door? Ask who they are — be sure, not sore!",
+  "“Hold the door!” sounds kind, it’s true — but check their pass is showing too!",
+  "Behind you close, they sneak on in? Don’t let trouble start to begin!",
+  "Your screen says ‘virus’? Click to pay? It’s fake — just back away!",
+  "“Your system’s hacked!” with flashing lights? It’s just a trick to give you frights!",
+  "Scary pop-ups, lots of fear? Close the tab — stay clear!",
 ];
 
 export default function BestPraticesScreen() {
@@ -166,13 +213,7 @@ export default function BestPraticesScreen() {
           )}
         </View>
       </View>
-      <View
-        style={{
-          height: 80,
-          backgroundColor: "#FF0000",
-          width: "100%",
-        }}
-      ></View>
+      <Footer />
     </View>
   );
 }

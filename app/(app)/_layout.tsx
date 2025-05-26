@@ -8,16 +8,17 @@ import {
 } from "expo-router";
 import { useSession } from "@/providers/session";
 import { FontAwesome } from "@expo/vector-icons";
-import { DrawerActions } from "@react-navigation/native";
+
+export const unstable_settings = {
+  // Ensure that reloading on `/modal` keeps a back button present.
+  initialRouteName: "(drawer)",
+};
+
 export default function AppLayout() {
   const { session, isLoading } = useSession();
   const param = useLocalSearchParams<{
     topic?: string;
   }>();
-
-  console.log({ param });
-
-  console.log({ session, isLoading });
 
   // You can keep the splash screen open, or render a loading screen like we do here.
   if (isLoading) {
@@ -87,18 +88,20 @@ export default function AppLayout() {
         name="[topic]"
         options={{ title: "", headerStyle: { backgroundColor: "#01BAFD" } }}
       />
+
       <Stack.Screen
-        name="simulate-attack"
+        name="best-pratices"
         options={{
           title: "",
           headerStyle: { backgroundColor: "#01BAFD" },
         }}
       />
       <Stack.Screen
-        name="best-pratices"
+        name="simulate"
         options={{
           title: "",
           headerStyle: { backgroundColor: "#01BAFD" },
+          headerShown: false,
         }}
       />
       <Stack.Screen
