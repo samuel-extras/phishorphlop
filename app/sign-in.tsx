@@ -17,7 +17,7 @@ interface LoginForm {
   emailOrUsername: string;
   password: string;
 }
-export default function SignIn() {
+export default function SignInScreen() {
   const db = useSQLiteContext();
   const { signIn } = useSession();
   const [form, setForm] = useState<LoginForm>({

@@ -18,7 +18,7 @@ interface RegisterForm {
   password: string;
   confirmPassword: string;
 }
-export default function SignUp() {
+export default function SignUpScreen() {
   const db = useSQLiteContext();
   const [form, setForm] = useState<RegisterForm>({
     username: "",

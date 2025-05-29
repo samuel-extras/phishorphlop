@@ -37,7 +37,7 @@ export default function DashboardScreen() {
   // Function to fetch data
   const fetchData = useCallback(async () => {
     try {
-      const userId = 1; // Replace with AuthContext userId
+      const userId = Number(session?.split(",")[0]); // Replace with AuthContext userId
       const user = await db.getFirstAsync<User>(
         "SELECT * FROM users WHERE id = ?",
         [userId]
@@ -49,7 +49,7 @@ export default function DashboardScreen() {
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
     }
-  }, [db]);
+  }, [db, session]);
 
   // Use useFocusEffect to refetch data when the screen comes into focus
   useFocusEffect(

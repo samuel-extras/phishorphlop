@@ -173,27 +173,6 @@ export default function FlashcardsScreen() {
             <Text style={styles.flashcardText}>{currentFlashcard?.answer}</Text>
           </Animated.View>
         </TouchableOpacity>
-        {/* <TouchableOpacity
-          style={{
-            backgroundColor: "#1E1E1E",
-            height: "auto",
-            paddingVertical: 18,
-            paddingHorizontal: 18,
-            minHeight: 200,
-            borderRadius: 4,
-            marginTop: 10,
-          }}
-        >
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 20,
-              fontWeight: "900",
-            }}
-          >
-            {" "}
-          </Text>
-        </TouchableOpacity> */}
         <View style={styles.navigationContainer}>
           {currentIndex !== 0 && (
             <TouchableOpacity

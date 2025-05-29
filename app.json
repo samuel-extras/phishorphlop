@@ -23,7 +23,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.samuelextras.phishorphlop"
+      "package": "com.samuelextras.phishorphlop",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -54,6 +58,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "61315fcd-1a6a-455d-babf-7e7713c08d65"
+      }
+    },
+    "owner": "samuelextras"
   }
 }
