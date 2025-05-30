@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.samuelextras.phishorphlop"
+      "bundleIdentifier": "com.divinefavorshomotun.phishorphlop"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.samuelextras.phishorphlop",
+      "package": "com.divinefavorshomotun.phishorphlop",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
@@ -65,6 +65,6 @@
         "projectId": "61315fcd-1a6a-455d-babf-7e7713c08d65"
       }
     },
-    "owner": "samuelextras"
+    "owner": "divinefavorshomotun"
   }
 }
