@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react-native";
+import { render, waitFor, act } from "@testing-library/react-native";
 import React from "react";
 import * as SQLite from "expo-sqlite";
 import { useFocusEffect } from "expo-router";
@@ -27,8 +27,11 @@ jest.mock("@/providers/session", () => ({
 jest.mock("@/components/footer", () => () => <></>);
 jest.mock("@/components/EditScreenInfo", () => () => <></>);
 jest.mock("@/components/Themed", () => ({
-  Text: (props: any) => <>{props.children}</>,
-  View: (props: any) => <>{props.children}</>,
+  Text: ({ children }: { children: any }) => <>{children}</>,
+  View: ({ children }: { children: any }) => <>{children}</>,
+}));
+jest.mock("expo-status-bar", () => ({
+  StatusBar: () => <></>,
 }));
 
 describe("DashboardScreen Integration Tests", () => {
@@ -54,11 +57,13 @@ describe("DashboardScreen Integration Tests", () => {
   });
 
   it("renders the dashboard correctly", async () => {
-    mockDb.getFirstAsync.mockResolvedValue({
-      id: 1,
-      username: "testuser",
-      quizScores: "[]",
-      simulationScores: "[]",
+    await act(async () => {
+      mockDb.getFirstAsync.mockResolvedValue({
+        id: 1,
+        username: "testuser",
+        quizScores: "[]",
+        simulationScores: "[]",
+      });
     });
 
     const { getByText } = render(<DashboardScreen />);
@@ -77,34 +82,36 @@ describe("DashboardScreen Integration Tests", () => {
   });
 
   it("fetches and displays user data with quiz and simulation scores", async () => {
-    mockDb.getFirstAsync.mockResolvedValue({
-      id: 1,
-      username: "testuser",
-      quizScores: JSON.stringify([
-        {
-          attempt_id: "1",
-          type: "mcq",
-          score: 4,
-          total_questions: 5,
-          attempt_date: "2025-01-01",
-        },
-        {
-          attempt_id: "2",
-          type: "drag_drop",
-          score: 3,
-          total_questions: 4,
-          attempt_date: "2025-01-02",
-        },
-      ]),
-      simulationScores: JSON.stringify([
-        {
-          attempt_id: "3",
-          type: "email",
-          score: 2,
-          total_questions: 3,
-          attempt_date: "2025-01-03",
-        },
-      ]),
+    await act(async () => {
+      mockDb.getFirstAsync.mockResolvedValue({
+        id: 1,
+        username: "testuser",
+        quizScores: JSON.stringify([
+          {
+            attempt_id: "1",
+            type: "mcq",
+            score: 4,
+            total_questions: 5,
+            attempt_date: "2025-01-01",
+          },
+          {
+            attempt_id: "2",
+            type: "drag_drop",
+            score: 3,
+            total_questions: 4,
+            attempt_date: "2025-01-02",
+          },
+        ]),
+        simulationScores: JSON.stringify([
+          {
+            attempt_id: "3",
+            type: "email",
+            score: 2,
+            total_questions: 3,
+            attempt_date: "2025-01-03",
+          },
+        ]),
+      });
     });
 
     const { getByText } = render(<DashboardScreen />);
@@ -125,7 +132,6 @@ describe("DashboardScreen Integration Tests", () => {
 
   it("handles empty session gracefully", async () => {
     (useSession as jest.Mock).mockReturnValue({ session: null });
-    mockDb.getFirstAsync.mockResolvedValue(null);
 
     const { getByText } = render(<DashboardScreen />);
 
@@ -141,7 +147,9 @@ describe("DashboardScreen Integration Tests", () => {
   });
 
   it("handles database errors gracefully", async () => {
-    mockDb.getFirstAsync.mockRejectedValue(new Error("Database error"));
+    await act(async () => {
+      mockDb.getFirstAsync.mockRejectedValue(new Error("Database error"));
+    });
     const consoleErrorSpy = jest
       .spyOn(console, "error")
       .mockImplementation(() => {});
@@ -169,11 +177,13 @@ describe("DashboardScreen Integration Tests", () => {
   });
 
   it("triggers fetchData when screen comes into focus", async () => {
-    mockDb.getFirstAsync.mockResolvedValue({
-      id: 1,
-      username: "testuser",
-      quizScores: "[]",
-      simulationScores: "[]",
+    await act(async () => {
+      mockDb.getFirstAsync.mockResolvedValue({
+        id: 1,
+        username: "testuser",
+        quizScores: "[]",
+        simulationScores: "[]",
+      });
     });
 
     render(<DashboardScreen />);
