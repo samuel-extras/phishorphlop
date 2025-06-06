@@ -65,6 +65,15 @@ function RootLayoutNav() {
   );
 }
 
+interface QuizQuestion {
+  question: string;
+  correct_answer: string;
+  incorrect_answers: string; // Ensure this is always a string
+  explanation: string;
+  category: string;
+  type: string;
+}
+
 // Generate a random key for database encryption
 const generateKey = async () => {
   const bytes = await Crypto.getRandomBytesAsync(32);
@@ -613,12 +622,16 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
       console.log("Flashcards already exist, skipping insertion");
     }
 
+    // Drop and recreate the quizzes table
+    // await db.execAsync(`DROP TABLE IF EXISTS quizzes`);
+    // console.log("Quizzes table dropped");
+
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS quizzes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         question TEXT UNIQUE,
         correct_answer TEXT,
-        incorrect_answers TEXT, -- Comma-separated list
+        incorrect_answers TEXT, -- Comma-separated list or JSON for red_flag
         explanation TEXT,
         category TEXT,
         type TEXT -- 'mcq', 'drag_drop', 'red_flag', 'password_strength'
@@ -633,8 +646,8 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
     console.log(`Existing quizzes: ${quizExistingCount}`);
 
     if (quizExistingCount === 0) {
-      const quizQuestions = [
-        // MCQ Questions (10)
+      const quizQuestions: QuizQuestion[] = [
+        // MCQ Questions (16)
         {
           question:
             "You receive an email from your 'bank' asking you to click a link to verify your account. The email address is 'support@bank-security.co'. What should you do?",
@@ -750,6 +763,65 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
           category: "Phishing",
           type: "mcq",
         },
+        {
+          question: "What is the strength of the password? \n Password: 123456",
+          correct_answer: "Weak",
+          incorrect_answers: "Moderate,Strong",
+          explanation:
+            "The password '123456' is very short and uses only numbers, making it weak. Strong passwords are long (12+ characters) and mix letters, numbers, and symbols.",
+          category: "Password Security",
+          type: "mcq",
+        },
+        {
+          question:
+            "What is the strength of the password? \n Password: SunnyDay2023",
+          correct_answer: "Moderate",
+          incorrect_answers: "Weak,Strong",
+          explanation:
+            "The password 'SunnyDay2023' is fairly long and mixes letters and numbers, but lacks special symbols, making it moderate. Add symbols for a strong password.",
+          category: "Password Security",
+          type: "mcq",
+        },
+        {
+          question:
+            "What is the strength of the password? \n Password: K9$mP!xQz@2023",
+          correct_answer: "Strong",
+          incorrect_answers: "Weak,Moderate",
+          explanation:
+            "The password 'K9$mP!xQz@2023' is long, with uppercase, lowercase, numbers, and symbols, making it strong. This combination resists brute-force attacks.",
+          category: "Password Security",
+          type: "mcq",
+        },
+        {
+          question:
+            "Email: From: support@paypa1.com, Subject: Account Issue, Body: Click here to update your details.",
+          correct_answer: "Misspelled domain (paypa1.com)",
+          incorrect_answers: "Subject line,Link in body,Support sender",
+          explanation:
+            "The domain 'paypa1.com' is misspelled (should be 'paypal.com'), a common phishing tactic. This is the red flag indicating the email is not legitimate.",
+          category: "Phishing",
+          type: "mcq",
+        },
+        {
+          question:
+            "Text: From: +1234567890, Body: Your bank account is locked. Call 555-1234 to unlock.",
+          correct_answer: "Unknown phone number",
+          incorrect_answers: "Bank account message,Call to action,Text format",
+          explanation:
+            "An unsolicited message from an unknown number is a red flag for smishing. Legitimate banks use official contact numbers, not random ones.",
+          category: "Smishing",
+          type: "mcq",
+        },
+        {
+          question:
+            "Email: From: admin@school.edu, Subject: Urgent, Body: Your grade report is ready at http://grades-report.net.",
+          correct_answer: "Non-official link domain",
+          incorrect_answers: "Sender email,Subject line,Grade report mention",
+          explanation:
+            "The link domain 'grades-report.net' doesn’t match the school’s official domain, a red flag for phishing. Official links should use the school’s domain.",
+          category: "Phishing",
+          type: "mcq",
+        },
         // Drag & Drop Questions (3)
         {
           question:
@@ -784,59 +856,62 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
         // Red Flag Questions (3)
         {
           question:
-            "Email: From: support@paypa1.com, Subject: Account Issue, Body: Click here to update your details.",
-          correct_answer: "Misspelled domain (paypa1.com)",
-          incorrect_answers: "Subject line,Link in body,Support sender",
+            "Review this email for phishing red flags: 'From: support@paypa1.com, Subject: Urgent Action Required, Body: Update your account at http://secure-login.co.'",
+          correct_answer: "2",
+          incorrect_answers:
+            '[{"text": "Sender: support@paypa1.com", "isRedFlag": true, "explanation": "The domain paypa1.com is misspelled (should be paypal.com), a common phishing tactic."}, {"text": "Subject: Urgent Action Required", "isRedFlag": false, "explanation": "Urgent subject lines are common but not inherently suspicious."}, {"text": "Link: http://secure-login.co", "isRedFlag": true, "explanation": "The link uses http:// and a non-official domain, indicating a phishing attempt."}]',
           explanation:
-            "The domain 'paypa1.com' is misspelled (should be 'paypal.com'), a common phishing tactic. This is the red flag indicating the email is not legitimate.",
+            "The email contains two red flags: a misspelled sender domain (paypa1.com) and an unsecured, non-official link (http://secure-login.co). Always verify sender domains and use official websites.",
           category: "Phishing",
           type: "red_flag",
         },
         {
           question:
-            "Text: From: +1234567890, Body: Your bank account is locked. Call 555-1234 to unlock.",
-          correct_answer: "Unknown phone number",
-          incorrect_answers: "Bank account message,Call to action,Text format",
+            "Identify red flags in this text: 'From: +9876543210, Body: Your account is locked. Call 555-9876 to unlock.'",
+          correct_answer: "2",
+          incorrect_answers:
+            '[{"text": "Sender: +9876543210", "isRedFlag": true, "explanation": "An unknown phone number sending unsolicited messages is a smishing red flag."}, {"text": "Body: Your account is locked", "isRedFlag": false, "explanation": "Account lock messages are common and not inherently suspicious."}, {"text": "Call 555-9876", "isRedFlag": true, "explanation": "Requesting a call to an unknown number is a common smishing tactic."}]',
           explanation:
-            "An unsolicited message from an unknown number is a red flag for smishing. Legitimate banks use official contact numbers, not random ones.",
+            "The text has two red flags: an unknown sender number and a request to call an unverified number. Verify account issues directly with official contacts.",
           category: "Smishing",
           type: "red_flag",
         },
         {
           question:
-            "Email: From: admin@school.edu, Subject: Urgent, Body: Your grade report is ready at http://grades-report.net.",
-          correct_answer: "Non-official link domain",
-          incorrect_answers: "Sender email,Subject line,Grade report mention",
+            "Spot red flags in this message: 'From: YourFriend123, Body: Hey, check out this deal! http://dealz.co/click'",
+          correct_answer: "1",
+          incorrect_answers:
+            '[{"text": "Sender: YourFriend123", "isRedFlag": false, "explanation": "The sender appears to be a friend, but accounts can be hacked."}, {"text": "Body: Hey, check out this deal!", "isRedFlag": false, "explanation": "Friendly messages are common and not inherently suspicious."}, {"text": "Link: http://dealz.co/click", "isRedFlag": true, "explanation": "A non-official link in an unsolicited message is a phishing red flag."}]',
           explanation:
-            "The link domain 'grades-report.net' doesn’t match the school’s official domain, a red flag for phishing. Official links should use the school’s domain.",
-          category: "Phishing",
+            "The suspicious link (http://dealz.co/click) is the primary red flag, as hacked accounts often send phishing links. Verify with the sender via another channel.",
+          category: "Social Media Phishing",
           type: "red_flag",
         },
         // Password Strength Questions (3)
         {
-          question: "Password: 123456",
+          question: "Enter a password that is considered weak.",
           correct_answer: "Weak",
           incorrect_answers: "Moderate,Strong",
           explanation:
-            "The password '123456' is very short and uses only numbers, making it weak. Strong passwords are long (12+ characters) and mix letters, numbers, and symbols.",
+            "Weak passwords are short (less than 8 characters) and lack variety (e.g., only numbers or letters). Example: '123456' or 'password'.",
           category: "Password Security",
           type: "password_strength",
         },
         {
-          question: "Password: SunnyDay2023",
+          question: "Enter a password that is considered moderate.",
           correct_answer: "Moderate",
           incorrect_answers: "Weak,Strong",
           explanation:
-            "The password 'SunnyDay2023' is fairly long and mixes letters and numbers, but lacks special symbols, making it moderate. Add symbols for a strong password.",
+            "Moderate passwords are longer (8+ characters) and include some variety (e.g., letters and numbers) but lack symbols or mixed case. Example: 'SunnyDay2023'.",
           category: "Password Security",
           type: "password_strength",
         },
         {
-          question: "Password: K9$mP!xQz@2023",
+          question: "Enter a password that is considered strong.",
           correct_answer: "Strong",
           incorrect_answers: "Weak,Moderate",
           explanation:
-            "The password 'K9$mP!xQz@2023' is long, with uppercase, lowercase, numbers, and symbols, making it strong. This combination resists brute-force attacks.",
+            "Strong passwords are long (12+ characters) and include uppercase, lowercase, numbers, and symbols. Example: 'K9$mP!xQz@2023'.",
           category: "Password Security",
           type: "password_strength",
         },
@@ -848,7 +923,7 @@ const createDbIfNeeded = async (db: SQLiteDatabase) => {
           [
             quiz.question,
             quiz.correct_answer,
-            quiz.incorrect_answers,
+            quiz.incorrect_answers ?? "", // Ensure incorrect_answers is a string
             quiz.explanation,
             quiz.category,
             quiz.type,

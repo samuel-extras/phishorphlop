@@ -31,6 +31,11 @@ export default function SignUpScreen() {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
+  const validatePassword = (password: string) => {
+    const re =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return re.test(password);
+  };
   const generateSalt = async () => {
     // Generate a random salt using expo-crypto and encode as base64
     const saltBytes = await Crypto.getRandomBytesAsync(16);
@@ -58,9 +63,20 @@ export default function SignUpScreen() {
       Alert.alert("Error", "Please enter a valid email address");
       return;
     }
+    if (
+      form.password &&
+      form.password.length >= 8 &&
+      !validatePassword(form.password)
+    ) {
+      Alert.alert(
+        "Error",
+        "Password must be min. 8 Characters and must contain Uppercase, Lowercase, Number, and special character"
+      );
+      return;
+    }
 
-    if (!form.password || form.password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long");
+    if (!form.password || form.password.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters long");
       return;
     }
 
@@ -189,7 +205,7 @@ export default function SignUpScreen() {
                 fontSize: 12,
               }}
             >
-              Min. 12 Characters. 1 Uppercase, Lowercase, Number, and Symbol
+              Min. 8 Characters. 1 Uppercase, Lowercase, Number, and Symbol
             </Text>
           </View>
 

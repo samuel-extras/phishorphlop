@@ -6,12 +6,11 @@ import {
   Alert,
   Dimensions,
   Platform,
+  TextInput,
 } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-
-import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import { router, Stack } from "expo-router";
 import {
@@ -52,6 +51,12 @@ interface User {
   username: string;
   quizScores: string;
   simulationScores: string;
+}
+
+interface RedFlagElement {
+  text: string;
+  isRedFlag: boolean;
+  explanation: string;
 }
 
 // Error Boundary Component
@@ -111,6 +116,15 @@ const CustomRadioButton: React.FC<CustomRadioButtonProps> = ({
 };
 const QUESTIONS_PER_ATTEMPT = 10;
 
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 export default function QuizScreen() {
   const [start, setStart] = useState<boolean>(false);
   const db = useSQLiteContext();
@@ -127,6 +141,14 @@ export default function QuizScreen() {
   const feedbackOpacity = useSharedValue(0);
   const { session } = useSession();
 
+  // Red Flag state
+  const [selectedRedFlags, setSelectedRedFlags] = useState<string[]>([]);
+
+  // Password Strength state
+  const [passwordInput, setPasswordInput] = useState<string>("");
+  const [passwordStrength, setPasswordStrength] = useState<string>("");
+  const [passwordFeedback, setPasswordFeedback] = useState<string>("");
+
   // Drag & Drop state
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -134,12 +156,6 @@ export default function QuizScreen() {
   const [dragItems, setDragItems] = useState<
     { id: string; text: string; position: { x: number; y: number } }[]
   >([]);
-  const [dropZone, setDropZone] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -150,7 +166,9 @@ export default function QuizScreen() {
             : "SELECT * FROM quizzes WHERE type = ?";
         const params = selectedType === "All" ? [] : [selectedType];
         const results = await db.getAllAsync<Quiz>(query, params);
-        setQuizzes(results);
+        // Shuffle the quizzes array
+        const shuffledQuizzes = shuffleArray(results);
+        setQuizzes(shuffledQuizzes);
         setCurrentIndex(0);
         setSelectedAnswer(null);
         setFeedback(null);
@@ -159,6 +177,10 @@ export default function QuizScreen() {
         setQuestionCount(0);
         setAttemptId(Date.now().toString());
         setDragItems([]);
+        setSelectedRedFlags([]);
+        setPasswordInput("");
+        setPasswordFeedback("");
+        setPasswordStrength("");
       } catch (error: any) {
         console.error("Error fetching quizzes:", error);
         Alert.alert("Error", "Failed to load quizzes. Please try again.");
@@ -167,21 +189,33 @@ export default function QuizScreen() {
     fetchQuizzes();
   }, [db, selectedType]);
 
-  // Update answer options when question changes
+  // Update answer options or reset states when question changes
   useEffect(() => {
     if (quizzes.length > 0 && currentIndex < quizzes.length) {
       const currentQuiz = quizzes[currentIndex];
-      const incorrect = currentQuiz.incorrect_answers.split(",");
-      const options = [currentQuiz.correct_answer, ...incorrect].sort(
-        () => Math.random() - 0.5
-      );
-      setAnswerOptions(options);
+      if (
+        currentQuiz.type === "mcq" ||
+        currentQuiz.type === "red_flag" ||
+        currentQuiz.type === "password_strength"
+      ) {
+        const incorrect = currentQuiz.incorrect_answers.split(",");
+        const options = [currentQuiz.correct_answer, ...incorrect].sort(
+          () => Math.random() - 0.5
+        );
+        setAnswerOptions(options);
+      } else {
+        setAnswerOptions([]);
+      }
       setSelectedAnswer(null);
       setFeedback(null);
       setIsCorrect(null);
       translateX.value = 0;
       translateY.value = 0;
       setDraggedAnswer(null);
+      setSelectedRedFlags([]);
+      setPasswordInput("");
+      setPasswordFeedback("");
+      setPasswordStrength("");
     }
   }, [currentIndex, quizzes]);
 
@@ -235,33 +269,48 @@ export default function QuizScreen() {
     }
   };
 
-  // const handleSubmit = () => {
-  //   if (!selectedAnswer && !draggedAnswer) {
-  //     Alert.alert("Error", "Please select or drag an answer.");
-  //     return;
-  //   }
+  // Password strength validation
+  const evaluatePasswordStrength = (
+    password: string
+  ): { strength: string; feedback: string } => {
+    const hasLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSymbols = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-  //   const answer = draggedAnswer || selectedAnswer;
-  //   if (!currentQuiz) return;
-  //   const isAnswerCorrect = answer === currentQuiz.correct_answer;
-  //   setIsCorrect(isAnswerCorrect);
-  //   setFeedback(
-  //     isAnswerCorrect
-  //       ? "Correct! " + currentQuiz.explanation
-  //       : `Incorrect. The correct answer is "${currentQuiz.correct_answer}". ${currentQuiz.explanation}`
-  //   );
-  //   if (currentQuiz.type === "drag_drop") {
-  //     translateX.value = 0;
-  //     translateY.value = 0;
-  //     setDraggedAnswer(null);
-  //   }
-  // };
+    let strength = "Weak";
+    let feedback = "Too short! Add more characters.";
+
+    if (hasLength) {
+      const criteriaMet = [
+        hasUpperCase,
+        hasLowerCase,
+        hasNumbers,
+        hasSymbols,
+      ].filter(Boolean).length;
+      if (criteriaMet >= 4 && password.length >= 12) {
+        strength = "Strong";
+        feedback = "Great! Includes numbers, symbols, and mixed case!";
+      } else if (criteriaMet >= 2) {
+        strength = "Moderate";
+        feedback = "Good, but add more variety (e.g., symbols or numbers).";
+      } else {
+        strength = "Weak";
+        feedback = "Too simple! Add uppercase, numbers, or symbols.";
+      }
+    }
+
+    return { strength, feedback };
+  };
 
   const handleSubmit = async () => {
     if (
       !selectedAnswer &&
       !draggedAnswer &&
-      currentQuiz?.type !== "drag_drop"
+      currentQuiz?.type !== "drag_drop" &&
+      currentQuiz?.type !== "red_flag" &&
+      currentQuiz?.type !== "password_strength"
     ) {
       Alert.alert("Error", "Please select an answer.");
       return;
@@ -273,25 +322,89 @@ export default function QuizScreen() {
     let answer = selectedAnswer;
 
     if (currentQuiz.type === "drag_drop") {
-      answer = draggedAnswer;
-      if (answer) {
-        isAnswerCorrect = answer === currentQuiz.correct_answer;
+      if (!draggedAnswer) {
+        Alert.alert("Error", "Please drag the item to Safe or Scam.");
+        return;
       }
+      answer = draggedAnswer;
+      isAnswerCorrect = answer === currentQuiz.correct_answer;
+      setFeedback(
+        isAnswerCorrect
+          ? `Correct! ${currentQuiz.explanation}`
+          : `Incorrect. The correct answer is "${currentQuiz.correct_answer}". ${currentQuiz.explanation}`
+      );
+    } else if (currentQuiz.type === "red_flag") {
+      if (!selectedRedFlags.length) {
+        Alert.alert("Error", "Please select at least one red flag.");
+        return;
+      }
+      let redFlags: RedFlagElement[] = [];
+      try {
+        redFlags = currentQuiz.incorrect_answers
+          ? JSON.parse(currentQuiz.incorrect_answers)
+          : [];
+      } catch (error: any) {
+        console.warn("Falling back to comma-separated red flags:", error);
+        const elements = currentQuiz.incorrect_answers
+          ? currentQuiz.incorrect_answers
+              .split(",")
+              .filter((e) => e.trim() !== "")
+          : [];
+        redFlags = elements.map((text, index) => ({
+          text,
+          isRedFlag: index < parseInt(currentQuiz.correct_answer),
+          explanation: `Element "${text}" is ${
+            index < parseInt(currentQuiz.correct_answer)
+              ? "suspicious"
+              : "normal"
+          }.`,
+        }));
+      }
+
+      const correctRedFlags = redFlags
+        .filter((flag) => flag.isRedFlag)
+        .map((flag) => flag.text);
+      const allCorrect =
+        selectedRedFlags.length === parseInt(currentQuiz.correct_answer) &&
+        correctRedFlags.every((flag) => selectedRedFlags.includes(flag)) &&
+        selectedRedFlags.every((flag) => correctRedFlags.includes(flag));
+      isAnswerCorrect = allCorrect;
+      const explanations = selectedRedFlags
+        .map((flag) => {
+          const element = redFlags.find((e) => e.text === flag);
+          return element ? `${flag}: ${element.explanation}` : "";
+        })
+        .join("\n");
+      setFeedback(
+        isAnswerCorrect
+          ? `Correct! You identified all red flags.\n${explanations}`
+          : `Incorrect. You missed some red flags or selected incorrect ones.\n${explanations}\nCorrect red flags: ${correctRedFlags.join(
+              ", "
+            )}.`
+      );
+    } else if (currentQuiz.type === "password_strength") {
+      if (!passwordInput.length) {
+        Alert.alert("Error", "Please enter password.");
+        return;
+      }
+      const { strength } = evaluatePasswordStrength(passwordInput);
+      isAnswerCorrect = strength === currentQuiz.correct_answer;
+      answer = passwordInput;
+      setFeedback(
+        isAnswerCorrect
+          ? `Correct! This password is ${strength}. ${currentQuiz.explanation}`
+          : `Incorrect. The password is ${strength}, but a ${currentQuiz.correct_answer} password is required. ${currentQuiz.explanation}`
+      );
     } else {
       isAnswerCorrect = selectedAnswer === currentQuiz.correct_answer;
-    }
-
-    if (!answer) {
-      Alert.alert("Error", "Please select or drag an answer.");
-      return;
+      setFeedback(
+        isAnswerCorrect
+          ? `Correct! ${currentQuiz.explanation}`
+          : `Incorrect. The correct answer is "${currentQuiz.correct_answer}". ${currentQuiz.explanation}`
+      );
     }
 
     setIsCorrect(isAnswerCorrect);
-    setFeedback(
-      isAnswerCorrect
-        ? "Correct! " + currentQuiz.explanation
-        : `Incorrect. The correct answer is "${currentQuiz.correct_answer}". ${currentQuiz.explanation}`
-    );
     feedbackOpacity.value = withSpring(1);
 
     const newQuestionCount = questionCount + 1;
@@ -302,7 +415,6 @@ export default function QuizScreen() {
     const totalQuestions = Math.min(quizzes.length, QUESTIONS_PER_ATTEMPT);
 
     if (newQuestionCount >= totalQuestions) {
-      // End of attempt
       await logQuizScore(currentQuiz.type, newCorrectCount, totalQuestions);
       Alert.alert(
         "Attempt Completed",
@@ -311,6 +423,7 @@ export default function QuizScreen() {
           {
             text: "OK",
             onPress: () => {
+              setQuizzes(shuffleArray<Quiz>(quizzes));
               setCurrentIndex(0);
               setCorrectCount(0);
               setQuestionCount(0);
@@ -323,17 +436,15 @@ export default function QuizScreen() {
               translateY.value = 0;
               setDraggedAnswer(null);
               setDragItems([]);
+              setSelectedRedFlags([]);
+              setPasswordInput("");
+              setPasswordFeedback("");
+              setPasswordStrength("");
               setStart(false);
             },
           },
         ]
       );
-    }
-
-    if (currentQuiz.type === "drag_drop") {
-      translateX.value = 0;
-      translateY.value = 0;
-      setDraggedAnswer(null);
     }
   };
 
@@ -345,9 +456,14 @@ export default function QuizScreen() {
     translateX.value = 0;
     translateY.value = 0;
     setDraggedAnswer(null);
+    setSelectedRedFlags([]);
+    setPasswordInput("");
+    setPasswordFeedback("");
+    setPasswordStrength("");
   };
 
   const handleStartAgain = () => {
+    setQuizzes(shuffleArray<Quiz>(quizzes));
     setCurrentIndex(0);
     setCorrectCount(0);
     setQuestionCount(0);
@@ -360,6 +476,10 @@ export default function QuizScreen() {
     translateY.value = 0;
     setDraggedAnswer(null);
     setDragItems([]);
+    setSelectedRedFlags([]);
+    setPasswordInput("");
+    setPasswordFeedback("");
+    setPasswordStrength("");
     setStart(false);
   };
 
@@ -395,8 +515,6 @@ export default function QuizScreen() {
 
     switch (currentQuiz.type) {
       case "mcq":
-      case "red_flag":
-      case "password_strength":
         return (
           <View style={styles.optionsContainer}>
             {answerOptions.map((option, index) => (
@@ -409,6 +527,79 @@ export default function QuizScreen() {
                 label={option}
               />
             ))}
+          </View>
+        );
+      case "red_flag":
+        let redFlags: RedFlagElement[] = [];
+        try {
+          // Try parsing as JSON
+          redFlags = currentQuiz.incorrect_answers
+            ? JSON.parse(currentQuiz.incorrect_answers)
+            : [];
+        } catch (error: any) {
+          // Fallback: Treat as comma-separated string
+          console.warn("Falling back to comma-separated red flags:", error);
+          const elements = currentQuiz.incorrect_answers
+            ? currentQuiz.incorrect_answers
+                .split(",")
+                .filter((e) => e.trim() !== "")
+            : [];
+          redFlags = elements.map((text, index) => ({
+            text,
+            isRedFlag: index < parseInt(currentQuiz.correct_answer), // Assume first N elements are red flags based on correct_answer
+            explanation: `Element "${text}" is ${
+              index < parseInt(currentQuiz.correct_answer)
+                ? "suspicious"
+                : "normal"
+            }.`,
+          }));
+        }
+        return (
+          <View style={styles.redFlagContainer}>
+            <Text style={styles.dragInstruction}>
+              Tap on suspicious parts of the message
+            </Text>
+            {redFlags.map((element, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.redFlagElement,
+                  selectedRedFlags.includes(element.text) &&
+                    styles.redFlagSelected,
+                ]}
+                onPress={() => {
+                  if (selectedRedFlags.includes(element.text)) {
+                    setSelectedRedFlags(
+                      selectedRedFlags.filter((flag) => flag !== element.text)
+                    );
+                  } else {
+                    setSelectedRedFlags([...selectedRedFlags, element.text]);
+                  }
+                }}
+                disabled={feedback !== null}
+              >
+                <Text style={styles.redFlagText}>{element.text}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        );
+      case "password_strength":
+        return (
+          <View style={styles.passwordContainer}>
+            <Text style={styles.dragInstruction}>Enter password</Text>
+            <TextInput
+              style={styles.passwordInput}
+              value={passwordInput}
+              onChangeText={(text) => {
+                setPasswordInput(text);
+                const { strength, feedback } = evaluatePasswordStrength(text);
+                setPasswordStrength(strength);
+                setPasswordFeedback(feedback);
+              }}
+              secureTextEntry
+              placeholder="Type your password"
+              placeholderTextColor="#666"
+            />
           </View>
         );
       case "drag_drop":
@@ -609,16 +800,44 @@ export default function QuizScreen() {
               </Text>
               {renderQuizContent()}
               {feedback ? (
-                <View
-                  style={[
-                    styles.feedbackContainer,
-                    isCorrect
-                      ? styles.correctFeedback
-                      : styles.incorrectFeedback,
-                  ]}
-                >
-                  <Text style={styles.feedbackText}>{feedback}</Text>
-                </View>
+                <>
+                  {currentQuiz.type === "password_strength" && (
+                    <View
+                      style={{
+                        alignItems: "center",
+                        marginVertical: 10,
+                        width: "100%",
+                      }}
+                    >
+                      <View style={styles.strengthMeter}>
+                        <View
+                          style={[
+                            styles.strengthBar,
+                            passwordStrength === "Weak" && styles.strengthWeak,
+                            passwordStrength === "Moderate" &&
+                              styles.strengthMedium,
+                            passwordStrength === "Strong" &&
+                              styles.strengthStrong,
+                            { width: passwordStrength ? "100%" : "0%" },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.passwordFeedback}>
+                        {passwordFeedback}
+                      </Text>
+                    </View>
+                  )}
+                  <View
+                    style={[
+                      styles.feedbackContainer,
+                      isCorrect
+                        ? styles.correctFeedback
+                        : styles.incorrectFeedback,
+                    ]}
+                  >
+                    <Text style={styles.feedbackText}>{feedback}</Text>
+                  </View>
+                </>
               ) : (
                 <TouchableOpacity
                   style={styles.submitButton}
@@ -667,7 +886,6 @@ const styles = StyleSheet.create({
     height: "auto",
     paddingVertical: 18,
     paddingHorizontal: 60,
-
     borderRadius: 100,
     marginTop: 10,
     alignItems: "center",
@@ -690,20 +908,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 20,
     textAlign: "center",
-  },
-  filterContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  filterLabel: {
-    fontSize: 16,
-    marginRight: 10,
-    color: "#333",
-  },
-  picker: {
-    flex: 1,
-    height: 44,
   },
   quizContainer: {
     backgroundColor: "#fff",
@@ -808,6 +1012,67 @@ const styles = StyleSheet.create({
   },
   dragItemText: {
     fontSize: 16,
+    color: "#333",
+    textAlign: "center",
+  },
+  redFlagContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  redFlagElement: {
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 5,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  redFlagSelected: {
+    borderColor: "#dc3545",
+    backgroundColor: "#ffe6e6",
+  },
+  redFlagText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  passwordContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  passwordInput: {
+    width: "100%",
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    marginVertical: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  strengthMeter: {
+    width: "100%",
+    height: 10,
+    backgroundColor: "#ccc",
+    borderRadius: 5,
+    overflow: "hidden",
+    marginVertical: 10,
+  },
+  strengthBar: {
+    height: "100%",
+    borderRadius: 5,
+  },
+  strengthWeak: {
+    backgroundColor: "#dc3545",
+  },
+  strengthMedium: {
+    backgroundColor: "#ffc107",
+  },
+  strengthStrong: {
+    backgroundColor: "#28a745",
+  },
+  passwordFeedback: {
+    fontSize: 14,
     color: "#333",
     textAlign: "center",
   },

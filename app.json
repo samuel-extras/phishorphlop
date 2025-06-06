@@ -45,7 +45,9 @@
       ],
       [
         "expo-sqlite",
+
         {
+          // Enable SQLCipher
           "useSQLCipher": true
         }
       ],
